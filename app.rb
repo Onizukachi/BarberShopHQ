@@ -12,6 +12,9 @@ end
 class Barber < ActiveRecord::Base	
 end
 
+class Contact < ActiveRecord::Base
+end
+
 before do
 	@barbers = Barber.all
 end
@@ -32,5 +35,37 @@ post '/visit'do
     @barba = params[:barber]
     @color = params[:color]
 
-    erb "<h2>Спасибо, вы записались</h2>"
+	#Проводим валидацию
+    hh = { :username => ' Введите имя', 
+		:phone => "Введите телефон", 
+		:date_name => 'Введите дату и время' }
+
+	@error = hh.select { |key,_| params[key] == '' }.values.join(". ")
+
+	return erb :visit if @error != ''
+
+	client = Client.create(name:  @username, phone: @phone, datestamp: @date_name, barber: @barba, color: @color)
+
+    erb "<h2>Спасибо #{@username}, вы записались к #{@barba} на #{@date_name}</h2>"
+end
+
+get '/contacts' do
+    erb :contacts
+end
+
+post '/contacts' do
+    @name = params[:name]
+    @email = params[:email]
+    @text = params[:text]
+
+    hh = { email: 'Введите адрес электронной почты', text: 'Вы не ввели сообещение', name: 'Не введено имя'  }
+    
+    @error = hh.select { |key,_| params[key] == '' }.values.join('. ')
+    
+    return erb :contacts if @error != ''
+
+    #Записываем данные в бд с помощью activerecord
+    Contact.create(name: @name, email: @email, text: @text)
+
+    erb "<h2>Спасибо #{@name} за сообщение</h2>"
 end
