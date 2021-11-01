@@ -75,3 +75,14 @@ get "/barber/:id" do
     @barber = Barber.find(params[:id])
     erb :barber
 end
+
+get '/bookings' do
+    #Список записавшихся осортированный по дате добалвения, сначала новые
+    @client = Client.order('created_at DESC')
+    erb :bookings
+end
+
+get '/client/:id' do
+    @client = Client.find(params[:id])
+    erb :client
+end
