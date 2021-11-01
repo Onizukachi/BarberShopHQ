@@ -7,6 +7,12 @@ set :database, {adapter: "sqlite3", database: "barbershop.db"}
 
 #Код ниже отвечает за настройку activerecord для нашей сущности
 class Client < ActiveRecord::Base
+    #Включаем валидацию на присутствие текста, :name это символ(1-ый параметр), а дальше идет хеш(2-ой параметр)
+    validates :name, presence: true, length: { minimum: 3 }
+    validates :phone, presence: true
+    validates :datestamp, presence: true
+    validates :color, presence: true
+
 end
 
 class Barber < ActiveRecord::Base	
@@ -23,34 +29,28 @@ get '/' do
 	erb :index	
 end
 
-get '/visit' do
-    #Присваиваем таблицу Barbers для вывода, сортируя по id
+get '/visit' do 
+    #Установим глобальную переменную чтобы она была доступна после отправки POS, так какмы вернемся сюда
+    @c = Client.new
     erb :visit
 end
 
 post '/visit'do
-    @username = params[:username]
-    @phone = params[:phone]
-    @date_name = params[:date_name]
-    @barba = params[:barber]
-    @color = params[:color]
+    #:client просто название, любое можно написать
+    @c = Client.new params[:client]
+    @c.save
 
-	#Проводим валидацию
-    hh = { :username => ' Введите имя', 
-		:phone => "Введите телефон", 
-		:date_name => 'Введите дату и время' }
-
-	@error = hh.select { |key,_| params[key] == '' }.values.join(". ")
-
-	return erb :visit if @error != ''
-
-	client = Client.create(name:  @username, phone: @phone, datestamp: @date_name, barber: @barba, color: @color)
-
-    erb "<h2>Спасибо #{@username}, вы записались к #{@barba} на #{@date_name}</h2>"
+    if @c.save
+        erb "<h2>Спасибо, вы записались</h2>"
+    else
+        @error = @c.errors.full_messages.first
+        erb :visit
+    end
 end
 
 get '/contacts' do
     erb :contacts
+    
 end
 
 post '/contacts' do
@@ -59,7 +59,7 @@ post '/contacts' do
     @text = params[:text]
 
     hh = { email: 'Введите адрес электронной почты', text: 'Вы не ввели сообещение', name: 'Не введено имя'  }
-    
+     
     @error = hh.select { |key,_| params[key] == '' }.values.join('. ')
     
     return erb :contacts if @error != ''
@@ -68,4 +68,10 @@ post '/contacts' do
     Contact.create(name: @name, email: @email, text: @text)
 
     erb "<h2>Спасибо #{@name} за сообщение</h2>"
+end
+
+get "/barber/:id" do
+    #find ищет элемент по primary key(id) и достает нужного нам барбера
+    @barber = Barber.find(params[:id])
+    erb :barber
 end
